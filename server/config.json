@@ -1,0 +1,10 @@
+{
+  "server_host": "localhost",
+  "server_port": 8080,
+
+  "db_user": "restaurants",
+  "db_host": "database-1.crwelowdecyk.us-east-1.rds.amazonaws.com",
+  "db_database": "postgres",
+  "db_password": "Final_project14579!",
+  "db_port": 5432
+}
