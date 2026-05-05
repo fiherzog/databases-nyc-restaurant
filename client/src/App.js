@@ -1,25 +1,33 @@
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { ThemeProvider } from 'styled-components';
+import { AppLayout } from './app/AppLayout';
+import { theme } from './styles/theme';
+import { GlobalStyle } from './styles/GlobalStyle';
 
-function App() {
+import { HomeSearchPage } from './pages/HomeSearchPage';
+import { RestaurantProfilePage } from './pages/RestaurantProfilePage';
+import { DangerZonePage } from './pages/DangerZonePage';
+import { RepeatOffendersPage } from './pages/RepeatOffendersPage';
+import { BoroughDashboardPage } from './pages/BoroughDashboardPage';
+import { DecliningRestaurantsPage } from './pages/DecliningRestaurantsPage';
+
+export default function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ThemeProvider theme={theme}>
+      <GlobalStyle />
+      <BrowserRouter>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<HomeSearchPage />} />
+            <Route path="/restaurants/:camis" element={<RestaurantProfilePage />} />
+            <Route path="/danger-zone" element={<DangerZonePage />} />
+            <Route path="/repeat-offenders" element={<RepeatOffendersPage />} />
+            <Route path="/boroughs" element={<BoroughDashboardPage />} />
+            <Route path="/declining" element={<DecliningRestaurantsPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
-
-export default App;
