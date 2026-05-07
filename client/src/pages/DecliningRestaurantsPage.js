@@ -104,7 +104,7 @@ export function DecliningRestaurantsPage() {
                   const name = r.name ?? r.dba ?? r.DBA;
                   const boro = r.borough ?? r.boro ?? r.BORO;
                   const cuisine = r.cuisine ?? r.cuisine_description ?? r.CUISINE_DESCRIPTION;
-                  const latestDate = r.latest_date ?? r.date ?? r.inspection_date;
+                  const latestDate = r.latest_inspection_date ?? r.latest_date ?? r.date ?? r.inspection_date;
                   const latestScore = r.latest_score ?? r.score;
                   const avgScore = r.avg_score ?? r.average_score ?? r.mean_score;
                   const inc = r.score_increase ?? (latestScore != null && avgScore != null ? Number(latestScore) - Number(avgScore) : null);
@@ -133,4 +133,3 @@ export function DecliningRestaurantsPage() {
     </Grid>
   );
 }
-
