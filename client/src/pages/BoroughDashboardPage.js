@@ -196,7 +196,7 @@ export function BoroughDashboardPage() {
                     </div>
                     <div style={{ marginTop: 6, display: 'grid', gap: 6 }}>
                       {g.top.map((v, idx) => (
-                        <div key={`${v.code ?? idx}`} style={{ fontSize: 12, color: 'rgba(0,0,0,0.7)' }}>
+                        <div key={`${v.code ?? idx}`} style={{ fontSize: 12, color: '#000000' }}>
                           <span style={{ color: '#000000' }}>{safeText(v.code)}</span> — {safeText(v.description)}{' '}
                           <span style={{ color: 'rgba(0,0,0,0.9)' }}>({fmtNum(v.count)})</span>
                         </div>

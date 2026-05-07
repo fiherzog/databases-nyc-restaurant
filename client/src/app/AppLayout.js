@@ -75,7 +75,7 @@ const Nav = styled.nav`
 const NavItem = styled(NavLink)`
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 1px;
   padding: 10px 12px;
   border-radius: ${({ theme }) => theme.radius.sm};
   color: ${({ theme }) => theme.color.text2};
@@ -129,23 +129,23 @@ export function AppLayout() {
 
           <Nav>
             <NavItem to="/" end>
-              <Dot />
+              <img src="/2.png" alt="" style={{ width: 45, height: 45, objectFit: 'contain', flexShrink: 0 }} />
               Search
             </NavItem>
             <NavItem to="/danger-zone">
-              <Dot />
+              <img src="/2.png" alt="" style={{ width: 45, height: 45, objectFit: 'contain', flexShrink: 0 }} />
               Danger Zone
             </NavItem>
             <NavItem to="/repeat-offenders">
-              <Dot />
+              <img src="/2.png" alt="" style={{ width: 45, height: 45, objectFit: 'contain', flexShrink: 0 }} />
               Repeat Offenders
             </NavItem>
             <NavItem to="/boroughs">
-              <Dot />
+              <img src="/2.png" alt="" style={{ width: 45, height: 45, objectFit: 'contain', flexShrink: 0 }} />
               Borough Analytics
             </NavItem>
             <NavItem to="/declining">
-              <Dot />
+              <img src="/2.png" alt="" style={{ width: 45, height: 45, objectFit: 'contain', flexShrink: 0 }} />
               Declining Restaurants
             </NavItem>
           </Nav>
