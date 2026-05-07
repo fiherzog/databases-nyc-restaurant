@@ -8,6 +8,25 @@ import { PageHeader, PageKicker, PageTitle, TitleRow, TwoCol, Grid } from '../co
 import { fmtDate, fmtNum, safeText } from '../utils/format';
 import { TableWrap, Table, Th, Td, Tr } from '../components/DataTable';
 
+const MapsButton = styled.a`
+  display: inline-block;
+  margin-top: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #000;
+  color: #FFE9B9;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+  transition: transform 150ms ease, background 150ms ease, box-shadow 150ms ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    background: #222;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  }
+`;
+
 const BackLink = styled(Link)`
   color: ${({ theme }) => theme.color.link};
   font-size: 12px;
@@ -128,9 +147,6 @@ export function RestaurantProfilePage() {
         <TitleRow>
           <PageTitle>Restaurant</PageTitle>
         </TitleRow>
-        <PageKicker>
-          Profile is designed to work even without a Google match. Inspection history is always sourced from NYC health data.
-        </PageKicker>
       </PageHeader>
 
       <Panel>
@@ -191,7 +207,13 @@ export function RestaurantProfilePage() {
                   <span>Price level</span>
                   <StatValue>{gPrice ?? '—'}</StatValue>
                 </Stat>
-                {google?.place_id ? <Subtle>Place ID: {google.place_id}</Subtle> : null}
+                <MapsButton
+                  href={`https://www.google.com/maps/search/?api=1${google?.place_id ? `&query=${encodeURIComponent(name)}&query_place_id=${google.place_id}` : `&query=${encodeURIComponent(`${name} ${address ?? ''} ${boro ?? ''} NYC`)}`}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Discover on Maps
+                </MapsButton>
               </StatRow>
             ) : (
               <EmptyState title="No Google data available" detail="This restaurant didn’t match to a Google place record." />
@@ -234,7 +256,7 @@ export function RestaurantProfilePage() {
             </Table>
           </TableWrap>
         ) : (
-          <EmptyState title="No inspection history found" detail="This CAMIS returned an empty inspection list." />
+          <EmptyState title="No inspection history found" />
         )}
       </div>
     </Grid>

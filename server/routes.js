@@ -299,13 +299,21 @@ const getRestaurantInspections = async (req, res) => {
   }
 };
 
-// GET /api/analytics/mismatch?min_rating=4.0&min_score=28
+// GET /api/analytics/mismatch?min_rating=4.0&min_score=28&boro=&cuisine=
 const getMismatch = async (req, res) => {
   try {
     const { restaurant, inspection, gmap } = await resolveTables();
 
     const minRating = qFloat(req.query.min_rating, 4.0);
     const minScore = qInt(req.query.min_score, 28);
+    const boroFilter = qText(req.query.boro);
+    const cuisineFilter = qText(req.query.cuisine);
+
+    const params = [minRating, minScore];
+    let p = 3;
+    const extraWhere = [];
+    if (boroFilter) { extraWhere.push(`lower(r.boro) = lower($${p})`); params.push(boroFilter); p++; }
+    if (cuisineFilter) { extraWhere.push(`r.cuisine_description ilike $${p}`); params.push(`%${cuisineFilter}%`); p++; }
 
     const sql = `
       with latest_dates as (
@@ -329,11 +337,12 @@ const getMismatch = async (req, res) => {
       join ${inspection} i on i.camis = ld.camis and i.inspection_date = ld.latest_date
       where g.avg_rating >= $1
         and i.score >= $2
+        ${extraWhere.length ? `and ${extraWhere.join(' and ')}` : ''}
       order by i.score desc, g.avg_rating desc
       limit 500
     `;
 
-    const { rows } = await pool.query(sql, [minRating, minScore]);
+    const { rows } = await pool.query(sql, params);
     res.json(rows);
   } catch (err) {
     send500(res, err);
@@ -343,21 +352,19 @@ const getMismatch = async (req, res) => {
 // GET /api/analytics/repeat-offenders?min_times=3&boro=
 const getRepeatOffenders = async (req, res) => {
   try {
-    const { restaurant, inspection, violation, violationCode } = await resolveTables();
+    const { restaurant, inspection, violation, violationCode: vcTable } = await resolveTables();
 
     const minTimes = qInt(req.query.min_times, 3);
-    const boro = qText(req.query.boro);
+    const boroFilter = qText(req.query.boro);
+    const cuisineFilter = qText(req.query.cuisine);
+    const vcFilter = qText(req.query.violation_code);
 
-    // Assumes inspection rows include violation_code + violation_description.
-    // If your schema stores violations separately, we can adjust quickly.
     const params = [minTimes];
     let p = 2;
     const where = [];
-    if (boro) {
-      where.push(`r.boro = $${p}`);
-      params.push(boro);
-      p++;
-    }
+    if (boroFilter) { where.push(`lower(r.boro) = lower($${p})`); params.push(boroFilter); p++; }
+    if (cuisineFilter) { where.push(`r.cuisine_description ilike $${p}`); params.push(`%${cuisineFilter}%`); p++; }
+    if (vcFilter) { where.push(`v.violation_code ilike $${p}`); params.push(`%${vcFilter}%`); p++; }
 
     const sql = `
       select
@@ -371,7 +378,7 @@ const getRepeatOffenders = async (req, res) => {
       from ${restaurant} r
       join ${inspection} i on r.camis = i.camis
       join ${violation} v on i.inspection_id = v.inspection_id
-      join ${violationCode} vc on v.violation_code = vc.code
+      join ${vcTable} vc on v.violation_code = vc.code
       where lower(v.critical_flag) like '%critical%'
         ${where.length ? `and ${where.join(' and ')}` : ''}
       group by r.camis, r.dba, r.boro, r.cuisine_description, v.violation_code, vc.description

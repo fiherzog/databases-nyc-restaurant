@@ -34,6 +34,11 @@ export const Input = styled.input`
   color: ${({ theme }) => theme.color.text};
   outline: none;
 
+  &::placeholder {
+    color: #000000;
+    opacity: 1;
+  }
+
   &:focus {
     border-color: ${({ theme }) => theme.color.border2};
     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);

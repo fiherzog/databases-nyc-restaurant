@@ -4,7 +4,7 @@ export const TableWrap = styled.div`
   overflow: auto;
   border-radius: ${({ theme }) => theme.radius.md};
   border: 1px solid ${({ theme }) => theme.color.border};
-  background: ${({ theme }) => theme.color.panel};
+  background: #FFE9B9;
 `;
 
 export const Table = styled.table`
@@ -23,7 +23,7 @@ export const Th = styled.th`
   font-size: 11px;
   color: ${({ theme }) => theme.color.text2};
   border-bottom: 1px solid ${({ theme }) => theme.color.border};
-  background: rgba(255, 255, 255, 0.02);
+  background: #FFE9B9;
   position: sticky;
   top: 0;
   z-index: 1;
@@ -38,10 +38,10 @@ export const Td = styled.td`
 
 export const Tr = styled.tr`
   &:nth-child(2n) {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(0, 0, 0, 0.04);
   }
   &:hover {
-    background: rgba(255, 176, 32, 0.06);
+    background: rgba(0, 0, 0, 0.08);
   }
 `;
 

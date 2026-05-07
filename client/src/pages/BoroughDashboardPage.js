@@ -51,7 +51,7 @@ function pickBoroughRows(data) {
     restaurants: x.restaurant_count ?? x.restaurants ?? x.count ?? x.n_restaurants,
     avg_score: x.avg_inspection_score ?? x.avg_score ?? x.mean_score,
     a_rate: x.a_grade_rate ?? x.a_rate ?? x.pct_a ?? x.percent_a,
-  }));
+  })).filter((x) => x.borough && x.borough !== '0');
 }
 
 function pickViolationRows(data) {
@@ -102,6 +102,7 @@ export function BoroughDashboardPage() {
     const grouped = new Map();
     violations.forEach((v) => {
       const b = v.borough ?? v.boro ?? v.BORO ?? 'Unknown';
+      if (b === '0') return;
       const arr = grouped.get(b) ?? [];
       arr.push({
         code: v.violation_code ?? v.code ?? v.VIOLATIONCODE,
@@ -185,8 +186,7 @@ export function BoroughDashboardPage() {
 
         <Panel>
           <PanelBody>
-            <h3 style={{ marginBottom: 10 }}>Most common violations (top 5)</h3>
-            <Mini style={{ marginBottom: 10 }}>Grouped per borough from `GET /api/violations/common`.</Mini>
+            <h3 style={{ marginBottom: 10 }}>Top Five Most Common Violations</h3>
             {top5ByBoro.length ? (
               <div style={{ display: 'grid', gap: 12 }}>
                 {top5ByBoro.map((g) => (
@@ -197,7 +197,7 @@ export function BoroughDashboardPage() {
                     <div style={{ marginTop: 6, display: 'grid', gap: 6 }}>
                       {g.top.map((v, idx) => (
                         <div key={`${v.code ?? idx}`} style={{ fontSize: 12, color: '#000000' }}>
-                          <span style={{ color: '#000000' }}>{safeText(v.code)}</span> — {safeText(v.description)}{' '}
+                          <span style={{ color: '#000000', fontWeight: 700 }}>{safeText(v.code)}</span> — {safeText(v.description)}{' '}
                           <span style={{ color: 'rgba(0,0,0,0.9)' }}>({fmtNum(v.count)})</span>
                         </div>
                       ))}

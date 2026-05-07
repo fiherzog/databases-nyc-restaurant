@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { searchRestaurants } from '../api/endpoints';
+import { Pagination, paginate } from '../components/Pagination';
 import { BOROUGHS, GRADES } from '../utils/constants';
 import { EmptyState, ErrorState, LoadingBlock } from '../components/States';
 import { Controls, ControlRow, Field, Input, Select, ButtonRow, Button, GhostButton } from '../components/Controls';
@@ -15,6 +16,20 @@ const ResultsGrid = styled.div`
   @media (max-width: 1100px) {
     grid-template-columns: 1fr;
   }
+`;
+
+const swing = keyframes`
+  0%   { transform: rotate(0deg); }
+  50%  { transform: rotate(45deg); }
+  100% { transform: rotate(0deg); }
+`;
+
+const MagnifyingIcon = styled.img`
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  animation: ${swing} 3s steps(1, end) infinite;
+  transform-origin: top left;
 `;
 
 const Hint = styled.div`
@@ -40,12 +55,15 @@ export function HomeSearchPage() {
   const [minRating, setMinRating] = useState('');
 
   const [rows, setRows] = useState([]);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 20;
   const [status, setStatus] = useState('idle'); // idle | loading | ok | error
   const [error, setError] = useState(null);
 
   const cuisineOptions = useMemo(() => uniqCuisine(rows), [rows]);
 
   async function runSearch() {
+    setPage(0);
     setStatus('loading');
     setError(null);
     try {
@@ -81,23 +99,26 @@ export function HomeSearchPage() {
     <Grid>
       <PageHeader>
         <TitleRow>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <PageTitle>Search</PageTitle>
-            <img src="/magnifying.png" alt="" style={{ width: 58, height: 58, objectFit: 'contain' }} />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <PageTitle style={{ position: 'relative', zIndex: 1 }}>Search</PageTitle>
+            <MagnifyingIcon src="/magnifying.png" alt="" style={{ zIndex: 0, position: 'relative', top: -8, left: 6 }} />
           </div>
         </TitleRow>
         <PageKicker>
           Search NYC restaurants by name, borough, cuisine, Google rating, and latest inspection grade. Results are read-only and
           link to a full inspection history.
         </PageKicker>
-        <Hint>Tip: start broad, then pin down borough + grade.</Hint>
+        <Hint style={{ fontStyle: 'italic', marginTop: 6 }}>Score Definitions:</Hint>
+        <Hint>* 0–13 = Grade A (good)</Hint>
+        <Hint>* 14–27 = Grade B (some violations)</Hint>
+        <Hint>* 28+ = Grade C (serious violations)</Hint>
       </PageHeader>
 
       <Controls>
         <ControlRow>
           <Field>
             Name / keyword
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., halal, pizza, cafe…" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && runSearch()} placeholder="e.g., halal, pizza, cafe…" />
           </Field>
           <Field>
             Borough
@@ -134,7 +155,7 @@ export function HomeSearchPage() {
           </Field>
           <Field>
             Min Google rating
-            <Input value={minRating} onChange={(e) => setMinRating(e.target.value)} placeholder="e.g., 4.0" inputMode="decimal" />
+            <Input value={minRating} onChange={(e) => setMinRating(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && runSearch()} placeholder="e.g., 4.0" inputMode="decimal" />
           </Field>
         </ControlRow>
 
@@ -161,11 +182,14 @@ export function HomeSearchPage() {
 
       {status === 'ok' ? (
         rows.length ? (
-          <ResultsGrid>
-            {rows.map((r, i) => (
-              <RestaurantCard key={r.camis ?? r.CAMIS ?? r.id ?? i} r={r} />
-            ))}
-          </ResultsGrid>
+          <>
+            <ResultsGrid>
+              {paginate(rows, page, PAGE_SIZE).map((r, i) => (
+                <RestaurantCard key={r.camis ?? r.CAMIS ?? r.id ?? i} r={r} />
+              ))}
+            </ResultsGrid>
+            <Pagination page={page} setPage={setPage} total={rows.length} pageSize={PAGE_SIZE} />
+          </>
         ) : (
           <EmptyState title="No matches" detail="Try removing filters or searching with a shorter keyword." />
         )

@@ -6,6 +6,47 @@ const fadeUp = keyframes`
   to { opacity: 1; transform: translateY(0); }
 `;
 
+const drive = keyframes`
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(100vw - 280px + 200px)); }
+`;
+
+const TaxiTrack = styled.div`
+  position: relative;
+  z-index: -1;
+  height: 82px;
+  overflow: hidden;
+  pointer-events: none;
+  margin-left: -32px;
+  margin-right: -32px;
+  margin-top: 8px;
+  margin-bottom: -32px;
+
+  @media (max-width: 980px) {
+    margin-left: -24px;
+    margin-right: -24px;
+    margin-top: 8px;
+    margin-bottom: -24px;
+  }
+`;
+
+const TaxiWrap = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: -200px;
+  animation: ${drive} 16s linear infinite;
+  display: inline-block;
+`;
+
+function Taxi() {
+  return (
+    <TaxiWrap>
+      <img src="/car.png" alt="" style={{ height: 82, display: 'block', transform: 'scaleX(-1)' }} />
+    </TaxiWrap>
+  );
+}
+
+
 const Shell = styled.div`
   min-height: 100%;
   display: grid;
@@ -155,6 +196,9 @@ export function AppLayout() {
 
       <Main>
         <Outlet />
+        <TaxiTrack>
+          <Taxi />
+        </TaxiTrack>
       </Main>
     </Shell>
   );

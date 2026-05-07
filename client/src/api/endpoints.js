@@ -16,14 +16,14 @@ export async function getRestaurantInspections(camis) {
   return data;
 }
 
-export async function getMismatch({ min_rating = 4.0, min_score = 28 } = {}) {
-  const qs = toQuery({ min_rating, min_score });
+export async function getMismatch({ min_rating = 4.0, min_score = 28, boro, cuisine } = {}) {
+  const qs = toQuery({ min_rating, min_score, boro, cuisine });
   const { data } = await http.get(`/api/analytics/mismatch?${qs}`);
   return data;
 }
 
-export async function getRepeatOffenders({ min_times = 3, boro } = {}) {
-  const qs = toQuery({ min_times, boro });
+export async function getRepeatOffenders({ min_times = 3, boro, cuisine, violation_code } = {}) {
+  const qs = toQuery({ min_times, boro, cuisine, violation_code });
   const { data } = await http.get(`/api/analytics/repeat-offenders?${qs}`);
   return data;
 }

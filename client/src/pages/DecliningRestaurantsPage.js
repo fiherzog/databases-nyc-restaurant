@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getDeclining } from '../api/endpoints';
+import { Pagination, paginate } from '../components/Pagination';
 import { EmptyState, ErrorState, LoadingBlock } from '../components/States';
 import { PageHeader, PageKicker, PageTitle, TitleRow, Grid } from '../components/Page';
 import { Controls, ControlRow, Field, Input, ButtonRow, Button } from '../components/Controls';
@@ -9,6 +10,8 @@ import { fmtDate, fmtNum, safeText } from '../utils/format';
 
 export function DecliningRestaurantsPage() {
   const [minInspections, setMinInspections] = useState('3');
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 20;
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState(null);
   const [rows, setRows] = useState([]);
@@ -44,6 +47,8 @@ export function DecliningRestaurantsPage() {
     });
     return copy;
   }, [rows]);
+
+  const pageRows = useMemo(() => paginate(sorted, page, PAGE_SIZE), [sorted, page]);
 
   return (
     <Grid>
@@ -94,7 +99,7 @@ export function DecliningRestaurantsPage() {
                 </tr>
               </thead>
               <tbody>
-                {sorted.map((r, i) => {
+                {pageRows.map((r, i) => {
                   const camis = r.camis ?? r.CAMIS ?? r.id;
                   const name = r.name ?? r.dba ?? r.DBA;
                   const boro = r.borough ?? r.boro ?? r.BORO;
@@ -113,12 +118,13 @@ export function DecliningRestaurantsPage() {
                       <Td>{fmtDate(latestDate)}</Td>
                       <Td>{latestScore != null ? fmtNum(latestScore) : '—'}</Td>
                       <Td>{avgScore != null ? fmtNum(avgScore, 1) : '—'}</Td>
-                      <Td style={{ color: 'rgba(255,176,32,0.95)' }}>{inc != null ? fmtNum(inc, 1) : '—'}</Td>
+                      <Td style={{ color: 'red' }}>{inc != null ? fmtNum(inc, 1) : '—'}</Td>
                     </Tr>
                   );
                 })}
               </tbody>
             </Table>
+          <Pagination page={page} setPage={setPage} total={sorted.length} pageSize={PAGE_SIZE} />
           </TableWrap>
         ) : (
           <EmptyState title="No declining restaurants found" detail="Try lowering the minimum inspections threshold." />

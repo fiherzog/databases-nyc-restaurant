@@ -9,14 +9,14 @@ const Card = styled(Link)`
   padding: ${({ theme }) => theme.space.lg};
   border-radius: ${({ theme }) => theme.radius.md};
   border: 1px solid ${({ theme }) => theme.color.border};
-  background: ${({ theme }) => theme.color.panel};
+  background: #FFE9B9;
   box-shadow: 0 14px 28px ${({ theme }) => theme.color.shadow};
   transition: transform 130ms ease, border-color 130ms ease, background 130ms ease;
 
   &:hover {
     transform: translateY(-2px);
     border-color: ${({ theme }) => theme.color.border2};
-    background: rgba(255, 255, 255, 0.03);
+    background: #f5d99a;
   }
 `;
 
@@ -53,7 +53,7 @@ const Metric = styled.div`
   padding: 6px 10px;
   border-radius: 999px;
   border: 1px solid ${({ theme }) => theme.color.border};
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(0, 0, 0, 0.05);
   font-size: 12px;
   color: ${({ theme }) => theme.color.text2};
 `;
@@ -80,11 +80,11 @@ export function RestaurantCard({ r }) {
 
       <Row>
         <Metric>
-          Google: <span style={{ color: '#e7edf6' }}>{rating ? fmtNum(rating, 1) : '—'}</span>
+          Google: <span style={{ color: '#000000' }}>{rating ? fmtNum(rating, 1) : '—'}</span>
         </Metric>
         {r.latest_score ?? r.score ? (
           <Metric>
-            Score: <span style={{ color: '#e7edf6' }}>{fmtNum(r.latest_score ?? r.score)}</span>
+            Score: <span style={{ color: '#000000' }}>{fmtNum(r.latest_score ?? r.score)}</span>
           </Metric>
         ) : null}
       </Row>

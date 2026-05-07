@@ -7,7 +7,7 @@ const shimmer = keyframes`
 
 export const Panel = styled.div`
   border: 1px solid ${({ theme }) => theme.color.border};
-  background: ${({ theme }) => theme.color.panel};
+  background: #FFE9B9;
   border-radius: ${({ theme }) => theme.radius.md};
   box-shadow: 0 14px 28px ${({ theme }) => theme.color.shadow};
 `;

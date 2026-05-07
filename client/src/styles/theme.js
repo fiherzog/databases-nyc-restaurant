@@ -12,7 +12,7 @@ export const theme = {
     danger: '#b91c1c',
     ok: '#15803d',
     warn: '#92400e',
-    link: '#1d4ed8',
+    link: '#000000',
     shadow: 'rgba(0,0,0,0.25)',
   },
   font: {
