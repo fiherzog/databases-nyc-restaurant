@@ -11,7 +11,30 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false,
   },
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
+
+// ===== In-memory cache =====
+// Used for slow-changing, frequently queried analytics routes.
+// Cache entries expire after CACHE_TTL_MS milliseconds.
+const cache = {};
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function getCache(key) {
+  const entry = cache[key];
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
+    delete cache[key];
+    return null;
+  }
+  return entry.data;
+}
+
+function setCache(key, data) {
+  cache[key] = { data, timestamp: Date.now() };
+}
 
 function qInt(v, fallback) {
   const n = Number.parseInt(String(v ?? ''), 10);
@@ -28,25 +51,21 @@ function qText(v) {
   return s ? s : null;
 }
 
-// Schema from project writeup:
-// restaurant(camis PK, ..., gmap_business_id FK nullable)
-// inspection(inspection_id PK, camis FK, inspection_date, score, grade, action, ...)
-// violation(violation_id PK, inspection_id FK, violation_code, critical_flag, ...)
-// violation_code(code PK, description)
-// gmap_business(gmap_business_id PK, avg_rating, num_of_reviews, price, ...)
+// Table name constants — no need to call resolveTables() on every request
+const TABLES = {
+  restaurant: 'restaurant',
+  inspection: 'inspection',
+  violation: 'violation',
+  violationCode: 'violation_code',
+  gmap: 'gmap_business',
+};
+
+// Kept for backward compatibility with getSchemaDebug
 async function resolveTables() {
-  return {
-    restaurant: 'restaurant',
-    inspection: 'inspection',
-    violation: 'violation',
-    violationCode: 'violation_code',
-    gmap: 'gmap_business',
-  };
+  return TABLES;
 }
 
 function send500(res, err) {
-  // Avoid leaking secrets. Client gets a short message in production,
-  // but include SQL error details in dev to speed up schema fixes.
   console.error(err);
   const isProd = process.env.NODE_ENV === 'production';
   res.status(500).json({
@@ -126,27 +145,16 @@ const restaurants = async (req, res) => {
 };
 
 // GET /api/restaurants/search?name=&boro=&cuisine=&grade=&min_rating=
+// Uses latest_inspection materialized view instead of recomputing CTE on every request
 const searchRestaurants = async (req, res) => {
   try {
-    const { restaurant, inspection, gmap } = await resolveTables();
+    const { restaurant, gmap } = TABLES;
 
     const name = qText(req.query.name);
     const boro = qText(req.query.boro);
     const cuisine = qText(req.query.cuisine);
     const grade = qText(req.query.grade);
     const minRating = qFloat(req.query.min_rating, null);
-
-    const latestInspection = `
-      with latest as (
-        select camis, max(inspection_date) as latest_date
-        from ${inspection}
-        where score is not null
-        group by camis
-      )
-      select i.camis, i.inspection_date, i.score, i.grade, i.action
-      from ${inspection} i
-      join latest l on l.camis = i.camis and l.latest_date = i.inspection_date
-    `;
 
     const parts = [];
     const params = [];
@@ -180,6 +188,7 @@ const searchRestaurants = async (req, res) => {
 
     const where = parts.length ? `where ${parts.join(' and ')}` : '';
 
+    // latest_inspection is a materialized view — no CTE recomputation needed
     const sql = `
       select
         r.camis,
@@ -191,14 +200,17 @@ const searchRestaurants = async (req, res) => {
         g.avg_rating as google_rating,
         g.num_of_reviews as review_count
       from ${restaurant} r
-      left join (${latestInspection}) li on li.camis = r.camis
+      left join latest_inspection li on li.camis = r.camis
       left join ${gmap} g on r.gmap_business_id = g.gmap_business_id
       ${where}
       order by r.dba asc
       limit 200
     `;
 
+    console.time('searchRestaurants');
     const result = await pool.query(sql, params);
+    console.timeEnd('searchRestaurants');
+
     res.json(result.rows);
   } catch (err) {
     send500(res, err);
@@ -206,13 +218,15 @@ const searchRestaurants = async (req, res) => {
 };
 
 // GET /api/restaurants/:camis
+// Uses latest_inspection materialized view instead of ROW_NUMBER window function
 const getRestaurantProfile = async (req, res) => {
   try {
-    const { restaurant, inspection, gmap } = await resolveTables();
+    const { restaurant, gmap } = TABLES;
 
     const camis = qText(req.params.camis);
     if (!camis) return res.status(400).json({ error: 'Missing camis' });
 
+    // latest_inspection materialized view replaces the expensive ROW_NUMBER subquery
     const sql = `
       select
         r.camis,
@@ -232,15 +246,14 @@ const getRestaurantProfile = async (req, res) => {
         l.action as latest_action
       from ${restaurant} r
       left join ${gmap} g on r.gmap_business_id = g.gmap_business_id
-      left join (
-        select *, row_number() over (partition by camis order by inspection_date desc, inspection_id desc) as rn
-        from ${inspection}
-        where camis = $1
-      ) l on r.camis = l.camis and l.rn = 1
+      left join latest_inspection l on r.camis = l.camis
       where r.camis = $1
     `;
 
+    console.time('getRestaurantProfile');
     const { rows } = await pool.query(sql, [camis]);
+    console.timeEnd('getRestaurantProfile');
+
     if (!rows.length) return res.status(404).json({ error: 'Not found' });
 
     const row = rows[0];
@@ -277,7 +290,7 @@ const getRestaurantProfile = async (req, res) => {
 // GET /api/restaurants/:camis/inspections
 const getRestaurantInspections = async (req, res) => {
   try {
-    const { inspection } = await resolveTables();
+    const { inspection } = TABLES;
     const camis = qText(req.params.camis);
     if (!camis) return res.status(400).json({ error: 'Missing camis' });
 
@@ -300,9 +313,10 @@ const getRestaurantInspections = async (req, res) => {
 };
 
 // GET /api/analytics/mismatch?min_rating=4.0&min_score=28&boro=&cuisine=
+// Uses latest_inspection materialized view — eliminates CTE recomputation on every request
 const getMismatch = async (req, res) => {
   try {
-    const { restaurant, inspection, gmap } = await resolveTables();
+    const { restaurant, gmap } = TABLES;
 
     const minRating = qFloat(req.query.min_rating, 4.0);
     const minScore = qInt(req.query.min_score, 28);
@@ -315,13 +329,11 @@ const getMismatch = async (req, res) => {
     if (boroFilter) { extraWhere.push(`lower(r.boro) = lower($${p})`); params.push(boroFilter); p++; }
     if (cuisineFilter) { extraWhere.push(`r.cuisine_description ilike $${p}`); params.push(`%${cuisineFilter}%`); p++; }
 
+    // Replaces:
+    //   WITH latest_dates AS (SELECT camis, MAX(inspection_date) ... GROUP BY camis)
+    //   JOIN inspection i ON i.camis = ld.camis AND i.inspection_date = ld.latest_date
+    // With a direct join to the precomputed latest_inspection materialized view
     const sql = `
-      with latest_dates as (
-        select camis, max(inspection_date) as latest_date
-        from ${inspection}
-        where score is not null
-        group by camis
-      )
       select
         r.camis,
         r.dba as name,
@@ -329,64 +341,67 @@ const getMismatch = async (req, res) => {
         r.cuisine_description as cuisine,
         g.avg_rating as google_rating,
         g.num_of_reviews as review_count,
-        i.score as latest_score,
-        i.grade as latest_grade
+        li.score as latest_score,
+        li.grade as latest_grade
       from ${restaurant} r
       join ${gmap} g on r.gmap_business_id = g.gmap_business_id
-      join latest_dates ld on r.camis = ld.camis
-      join ${inspection} i on i.camis = ld.camis and i.inspection_date = ld.latest_date
+      join latest_inspection li on r.camis = li.camis
       where g.avg_rating >= $1
-        and i.score >= $2
+        and li.score >= $2
         ${extraWhere.length ? `and ${extraWhere.join(' and ')}` : ''}
-      order by i.score desc, g.avg_rating desc
+      order by li.score desc, g.avg_rating desc
       limit 500
     `;
 
+    console.time('getMismatch');
     const { rows } = await pool.query(sql, params);
+    console.timeEnd('getMismatch');
+
     res.json(rows);
   } catch (err) {
     send500(res, err);
   }
 };
 
-// GET /api/analytics/repeat-offenders?min_times=3&boro=
+// GET /api/analytics/repeat-offenders?min_times=3&boro=&cuisine=&violation_code=
+// Uses repeat_offenders materialized view — eliminates 4-table join + COUNT(DISTINCT) on every request
 const getRepeatOffenders = async (req, res) => {
   try {
-    const { restaurant, inspection, violation, violationCode: vcTable } = await resolveTables();
-
-    const minTimes = qInt(req.query.min_times, 3);
     const boroFilter = qText(req.query.boro);
     const cuisineFilter = qText(req.query.cuisine);
     const vcFilter = qText(req.query.violation_code);
 
-    const params = [minTimes];
-    let p = 2;
+    const params = [];
+    let p = 1;
     const where = [];
-    if (boroFilter) { where.push(`lower(r.boro) = lower($${p})`); params.push(boroFilter); p++; }
-    if (cuisineFilter) { where.push(`r.cuisine_description ilike $${p}`); params.push(`%${cuisineFilter}%`); p++; }
-    if (vcFilter) { where.push(`v.violation_code ilike $${p}`); params.push(`%${vcFilter}%`); p++; }
+    if (boroFilter) { where.push(`lower(boro) = lower($${p})`); params.push(boroFilter); p++; }
+    if (cuisineFilter) { where.push(`cuisine_description ilike $${p}`); params.push(`%${cuisineFilter}%`); p++; }
+    if (vcFilter) { where.push(`violation_code ilike $${p}`); params.push(`%${vcFilter}%`); p++; }
 
+    // Replaces:
+    //   4-table join (restaurant, inspection, violation, violation_code)
+    //   WHERE critical_flag LIKE '%critical%'
+    //   GROUP BY ... HAVING COUNT(DISTINCT inspection_id) >= 3
+    // With a direct SELECT from the precomputed repeat_offenders materialized view
     const sql = `
       select
-        r.camis,
-        r.dba as name,
-        r.boro as borough,
-        r.cuisine_description as cuisine,
-        v.violation_code,
-        vc.description as violation_description,
-        count(distinct i.inspection_id)::int as times_cited
-      from ${restaurant} r
-      join ${inspection} i on r.camis = i.camis
-      join ${violation} v on i.inspection_id = v.inspection_id
-      join ${vcTable} vc on v.violation_code = vc.code
-      where lower(v.critical_flag) like '%critical%'
-        ${where.length ? `and ${where.join(' and ')}` : ''}
-      group by r.camis, r.dba, r.boro, r.cuisine_description, v.violation_code, vc.description
-      having count(distinct i.inspection_id) >= $1
+        camis,
+        dba as name,
+        boro as borough,
+        cuisine_description as cuisine,
+        violation_code,
+        description as violation_description,
+        times_cited
+      from repeat_offenders
+      ${where.length ? `where ${where.join(' and ')}` : ''}
       order by times_cited desc
       limit 500
     `;
+
+    console.time('getRepeatOffenders');
     const { rows } = await pool.query(sql, params);
+    console.timeEnd('getRepeatOffenders');
+
     res.json(rows);
   } catch (err) {
     send500(res, err);
@@ -394,9 +409,16 @@ const getRepeatOffenders = async (req, res) => {
 };
 
 // GET /api/analytics/borough-stats
+// Cached: borough stats change only when new inspections are added
 const getBoroughStats = async (req, res) => {
   try {
-    const { restaurant, inspection } = await resolveTables();
+    const cached = getCache('borough_stats');
+    if (cached) {
+      console.log('getBoroughStats: cache hit');
+      return res.json(cached);
+    }
+
+    const { restaurant, inspection } = TABLES;
 
     const sql = `
       select
@@ -410,7 +432,12 @@ const getBoroughStats = async (req, res) => {
       group by r.boro
       order by avg_inspection_score desc
     `;
+
+    console.time('getBoroughStats');
     const { rows } = await pool.query(sql);
+    console.timeEnd('getBoroughStats');
+
+    setCache('borough_stats', rows);
     res.json(rows);
   } catch (err) {
     send500(res, err);
@@ -418,44 +445,36 @@ const getBoroughStats = async (req, res) => {
 };
 
 // GET /api/analytics/declining?min_inspections=3
+// Uses declining_restaurants materialized view — eliminates two CTE full scans on every request
 const getDeclining = async (req, res) => {
   try {
-    const { restaurant, inspection } = await resolveTables();
-
     const minInspections = qInt(req.query.min_inspections, 3);
 
+    // Replaces:
+    //   WITH avg_scores AS (SELECT camis, AVG(score) ... FROM inspection GROUP BY camis)
+    //   WITH latest_dates AS (SELECT camis, MAX(inspection_date) ... FROM inspection GROUP BY camis)
+    //   JOIN inspection i ON i.camis = ld.camis AND i.inspection_date = ld.latest_date
+    // With a direct SELECT from the precomputed declining_restaurants materialized view
     const sql = `
-      with avg_scores as (
-        select camis, avg(score)::float as avg_score, count(*)::int as num_inspections
-        from ${inspection}
-        where score is not null
-        group by camis
-      ),
-      latest_dates as (
-        select camis, max(inspection_date) as latest_date
-        from ${inspection}
-        where score is not null
-        group by camis
-      )
       select
-        r.camis,
-        r.dba as name,
-        r.boro as borough,
-        r.cuisine_description as cuisine,
-        i.inspection_date as latest_inspection_date,
-        i.score as latest_score,
-        a.avg_score,
-        (i.score - a.avg_score)::float as score_increase
-      from ${restaurant} r
-      join avg_scores a on r.camis = a.camis
-      join latest_dates ld on r.camis = ld.camis
-      join ${inspection} i on i.camis = ld.camis and i.inspection_date = ld.latest_date
-      where a.num_inspections >= $1
-        and i.score > a.avg_score
+        camis,
+        dba as name,
+        boro as borough,
+        cuisine_description as cuisine,
+        latest_inspection_date,
+        latest_score,
+        avg_score,
+        score_increase
+      from declining_restaurants
+      where num_inspections >= $1
       order by score_increase desc
       limit 500
     `;
+
+    console.time('getDeclining');
     const { rows } = await pool.query(sql, [minInspections]);
+    console.timeEnd('getDeclining');
+
     res.json(rows);
   } catch (err) {
     send500(res, err);
@@ -463,10 +482,20 @@ const getDeclining = async (req, res) => {
 };
 
 // GET /api/violations/common
+// Cached: violation frequency by borough changes only when new inspections are added
 const getCommonViolations = async (req, res) => {
   try {
-    const { restaurant, inspection, violation, violationCode } = await resolveTables();
+    const cached = getCache('common_violations');
+    if (cached) {
+      console.log('getCommonViolations: cache hit');
+      return res.json(cached);
+    }
 
+    const { restaurant, inspection, violation, violationCode } = TABLES;
+
+    // This query is kept as-is since it uses ROW_NUMBER for top-5-per-borough ranking
+    // which does not simplify further with a materialized view given the dynamic rn filter.
+    // Caching handles the performance instead.
     const sql = `
       with v as (
         select
@@ -490,7 +519,12 @@ const getCommonViolations = async (req, res) => {
       where rn <= 5
       order by borough, count desc
     `;
+
+    console.time('getCommonViolations');
     const { rows } = await pool.query(sql);
+    console.timeEnd('getCommonViolations');
+
+    setCache('common_violations', rows);
     res.json(rows);
   } catch (err) {
     send500(res, err);
