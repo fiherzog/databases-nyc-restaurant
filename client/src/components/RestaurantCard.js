@@ -29,6 +29,7 @@ const Top = styled.div`
 
 const Name = styled.div`
   font-family: ${({ theme }) => theme.font.display};
+  font-weight: 700;
   font-size: 22px;
   letter-spacing: 0.04em;
   text-transform: uppercase;

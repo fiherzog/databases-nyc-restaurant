@@ -17,6 +17,7 @@ export const Th = styled.th`
   text-align: left;
   padding: 12px 14px;
   font-family: ${({ theme }) => theme.font.display};
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-size: 11px;

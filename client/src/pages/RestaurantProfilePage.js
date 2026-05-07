@@ -16,6 +16,7 @@ const BackLink = styled(Link)`
 
 const BigName = styled.div`
   font-family: ${({ theme }) => theme.font.display};
+  font-weight: 700;
   font-size: 34px;
   letter-spacing: 0.05em;
   text-transform: uppercase;

@@ -81,13 +81,16 @@ export function HomeSearchPage() {
     <Grid>
       <PageHeader>
         <TitleRow>
-          <PageTitle>Search</PageTitle>
-          <Hint>Tip: start broad, then pin down borough + grade.</Hint>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <PageTitle>Search</PageTitle>
+            <img src="/magnifying.png" alt="" style={{ width: 58, height: 58, objectFit: 'contain' }} />
+          </div>
         </TitleRow>
         <PageKicker>
           Search NYC restaurants by name, borough, cuisine, Google rating, and latest inspection grade. Results are read-only and
           link to a full inspection history.
         </PageKicker>
+        <Hint>Tip: start broad, then pin down borough + grade.</Hint>
       </PageHeader>
 
       <Controls>

@@ -39,6 +39,7 @@ const StateWrap = styled(Panel)`
 
 const StateTitle = styled.div`
   font-family: ${({ theme }) => theme.font.display};
+  font-weight: 700;
   font-size: 18px;
   letter-spacing: 0.03em;
 `;

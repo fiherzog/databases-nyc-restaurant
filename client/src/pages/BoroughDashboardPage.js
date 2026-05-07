@@ -24,6 +24,7 @@ const StatCard = styled(Panel)`
 
 const StatTitle = styled.div`
   font-family: ${({ theme }) => theme.font.display};
+  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: ${({ theme }) => theme.color.text2};
@@ -32,6 +33,7 @@ const StatTitle = styled.div`
 
 const StatValue = styled.div`
   font-family: ${({ theme }) => theme.font.display};
+  font-weight: 700;
   font-size: 26px;
   letter-spacing: 0.04em;
 `;
@@ -167,14 +169,14 @@ export function BoroughDashboardPage() {
             <div style={{ width: '100%', height: 320 }}>
               <ResponsiveContainer>
                 <BarChart data={chartData} margin={{ top: 10, right: 18, left: 0, bottom: 20 }}>
-                  <CartesianGrid stroke="rgba(231,237,246,0.10)" vertical={false} />
-                  <XAxis dataKey="borough" tick={{ fill: 'rgba(231,237,246,0.72)', fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={60} />
-                  <YAxis tick={{ fill: 'rgba(231,237,246,0.72)', fontSize: 11 }} />
+                  <CartesianGrid stroke="rgba(0,0,0,0.10)" vertical={false} />
+                  <XAxis dataKey="borough" tick={{ fill: 'rgba(0,0,0,0.70)', fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={60} />
+                  <YAxis tick={{ fill: 'rgba(0,0,0,0.70)', fontSize: 11 }} />
                   <Tooltip
-                    contentStyle={{ background: '#0f1621', border: '1px solid rgba(231,237,246,0.18)', borderRadius: 10 }}
-                    labelStyle={{ color: 'rgba(231,237,246,0.8)' }}
+                    contentStyle={{ background: '#e85e0a', border: '1px solid rgba(0,0,0,0.25)', borderRadius: 10 }}
+                    labelStyle={{ color: 'rgba(0,0,0,0.8)' }}
                   />
-                  <Bar dataKey="avgScore" fill="rgba(255,176,32,0.82)" />
+                  <Bar dataKey="avgScore" fill="rgba(0,0,0,0.70)" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -188,15 +190,15 @@ export function BoroughDashboardPage() {
             {top5ByBoro.length ? (
               <div style={{ display: 'grid', gap: 12 }}>
                 {top5ByBoro.map((g) => (
-                  <div key={g.borough} style={{ border: '1px solid rgba(231,237,246,0.12)', borderRadius: 12, padding: 12, background: 'rgba(255,255,255,0.02)' }}>
-                    <div style={{ fontFamily: 'Barlow Condensed, sans-serif', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  <div key={g.borough} style={{ border: '1px solid rgba(0,0,0,0.15)', borderRadius: 12, padding: 12, background: 'rgba(0,0,0,0.05)' }}>
+                    <div style={{ fontFamily: '"DM Serif Display", Georgia, serif', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                       {safeText(g.borough)}
                     </div>
                     <div style={{ marginTop: 6, display: 'grid', gap: 6 }}>
                       {g.top.map((v, idx) => (
-                        <div key={`${v.code ?? idx}`} style={{ fontSize: 12, color: 'rgba(231,237,246,0.8)' }}>
-                          <span style={{ color: '#e7edf6' }}>{safeText(v.code)}</span> — {safeText(v.description)}{' '}
-                          <span style={{ color: 'rgba(255,176,32,0.9)' }}>({fmtNum(v.count)})</span>
+                        <div key={`${v.code ?? idx}`} style={{ fontSize: 12, color: 'rgba(0,0,0,0.7)' }}>
+                          <span style={{ color: '#000000' }}>{safeText(v.code)}</span> — {safeText(v.description)}{' '}
+                          <span style={{ color: 'rgba(0,0,0,0.9)' }}>({fmtNum(v.count)})</span>
                         </div>
                       ))}
                     </div>

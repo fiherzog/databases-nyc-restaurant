@@ -77,12 +77,13 @@ export function DangerZonePage() {
     <Grid>
       <PageHeader>
         <TitleRow>
-          <PageTitle>Danger Zone</PageTitle>
-          <Compact>High Google ratings, poor inspection scores.</Compact>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <PageTitle>Danger Zone</PageTitle>
+            <img src="/warning.png" alt="" style={{ width: 98, height: 98, objectFit: 'contain' }} />
+          </div>
         </TitleRow>
         <PageKicker>
-          Restaurants with Google rating ≥ {minRating} but latest NYC inspection score ≥ {minScore}. These can look great publicly
-          while failing basic food safety standards.
+          Restaurants with a Google rating ≥ {minRating} but have a latest NYC inspection score ≥ {minScore}. These restaurants look great publicly, but they are failing basic food safety standards.
         </PageKicker>
       </PageHeader>
 

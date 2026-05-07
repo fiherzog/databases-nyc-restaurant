@@ -2,7 +2,7 @@ import { createGlobalStyle } from 'styled-components';
 
 export const GlobalStyle = createGlobalStyle`
   ::selection {
-    background: rgba(255, 176, 32, 0.22);
+    background: rgba(0, 0, 0, 0.15);
   }
 
   body {
@@ -13,6 +13,7 @@ export const GlobalStyle = createGlobalStyle`
 
   h1, h2, h3, h4 {
     font-family: ${({ theme }) => theme.font.display};
+    font-weight: 700;
     letter-spacing: 0.02em;
     margin: 0;
   }

@@ -22,7 +22,7 @@ export const Field = styled.label`
   display: grid;
   gap: 6px;
   font-size: 12px;
-  color: ${({ theme }) => theme.color.text2};
+  color: ${({ theme }) => theme.color.text};
 `;
 
 export const Input = styled.input`
@@ -30,13 +30,13 @@ export const Input = styled.input`
   padding: 10px 12px;
   border-radius: ${({ theme }) => theme.radius.sm};
   border: 1px solid ${({ theme }) => theme.color.border};
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(0, 0, 0, 0.06);
   color: ${({ theme }) => theme.color.text};
   outline: none;
 
   &:focus {
     border-color: ${({ theme }) => theme.color.border2};
-    box-shadow: 0 0 0 3px rgba(255, 176, 32, 0.12);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);
   }
 `;
 
@@ -45,13 +45,13 @@ export const Select = styled.select`
   padding: 10px 12px;
   border-radius: ${({ theme }) => theme.radius.sm};
   border: 1px solid ${({ theme }) => theme.color.border};
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(0, 0, 0, 0.06);
   color: ${({ theme }) => theme.color.text};
   outline: none;
 
   &:focus {
     border-color: ${({ theme }) => theme.color.border2};
-    box-shadow: 0 0 0 3px rgba(255, 176, 32, 0.12);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);
   }
 `;
 
@@ -65,14 +65,14 @@ export const Button = styled.button`
   padding: 10px 12px;
   border-radius: ${({ theme }) => theme.radius.sm};
   border: 1px solid ${({ theme }) => theme.color.border2};
-  background: rgba(255, 176, 32, 0.10);
+  background: rgba(0, 0, 0, 0.10);
   color: ${({ theme }) => theme.color.text};
   cursor: pointer;
   transition: transform 120ms ease, background 120ms ease;
 
   &:hover {
     transform: translateY(-1px);
-    background: rgba(255, 176, 32, 0.14);
+    background: rgba(0, 0, 0, 0.14);
   }
 
   &:disabled {
@@ -82,11 +82,11 @@ export const Button = styled.button`
 `;
 
 export const GhostButton = styled(Button)`
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(0, 0, 0, 0.04);
   border-color: ${({ theme }) => theme.color.border};
 
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.08);
   }
 `;
 

@@ -20,9 +20,10 @@ const Sidebar = styled.aside`
   position: sticky;
   top: 0;
   height: 100vh;
-  padding: ${({ theme }) => theme.space.xl};
+  display: flex;
+  flex-direction: column;
   border-right: 1px solid ${({ theme }) => theme.color.border};
-  background: linear-gradient(180deg, ${({ theme }) => theme.color.panel2}, rgba(11, 15, 20, 0));
+  overflow: hidden;
 
   @media (max-width: 980px) {
     position: relative;
@@ -32,19 +33,35 @@ const Sidebar = styled.aside`
   }
 `;
 
+const SidebarContent = styled.div`
+  padding: ${({ theme }) => theme.space.xl};
+  flex: 1;
+`;
+
+const SkylineImage = styled.img`
+  width: 100%;
+  display: block;
+  flex-shrink: 0;
+
+  @media (max-width: 980px) {
+    display: none;
+  }
+`;
+
 const Brand = styled.div`
   margin-bottom: ${({ theme }) => theme.space.xl};
 `;
 
 const BrandTitle = styled.div`
   font-family: ${({ theme }) => theme.font.display};
+  font-weight: 700;
   font-size: 26px;
   letter-spacing: 0.04em;
   line-height: 1.05;
 `;
 
 const BrandSub = styled.div`
-  margin-top: ${({ theme }) => theme.space.xs};
+  margin-top: ${({ theme }) => theme.space.md};
   color: ${({ theme }) => theme.color.text2};
   font-size: 12px;
   line-height: 1.3;
@@ -74,7 +91,7 @@ const NavItem = styled(NavLink)`
   &.active {
     color: ${({ theme }) => theme.color.text};
     border-color: ${({ theme }) => theme.color.border2};
-    background: rgba(255, 176, 32, 0.08);
+    background: rgba(0, 0, 0, 0.08);
   }
 `;
 
@@ -83,7 +100,7 @@ const Dot = styled.span`
   height: 8px;
   border-radius: 999px;
   background: ${({ theme }) => theme.color.accent};
-  box-shadow: 0 0 0 3px rgba(255, 176, 32, 0.12);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.15);
   flex: 0 0 auto;
 `;
 
@@ -100,37 +117,40 @@ export function AppLayout() {
   return (
     <Shell>
       <Sidebar>
-        <Brand>
-          <BrandTitle>NYC Safety Explorer</BrandTitle>
-          <BrandSub>
-            Health inspections × Google ratings.
-            <br />
-            Find mismatch, repeat offenders, and borough trends.
-          </BrandSub>
-        </Brand>
+        <SidebarContent>
+          <Brand>
+            <BrandTitle>NYC Restaurant Explorer</BrandTitle>
+            <BrandSub>
+              Explore NYC's dining scene with a focus on safety.
+              <br />
+              Dive into health inspection records across every borough.
+            </BrandSub>
+          </Brand>
 
-        <Nav>
-          <NavItem to="/" end>
-            <Dot />
-            Search
-          </NavItem>
-          <NavItem to="/danger-zone">
-            <Dot />
-            Danger Zone
-          </NavItem>
-          <NavItem to="/repeat-offenders">
-            <Dot />
-            Repeat Offenders
-          </NavItem>
-          <NavItem to="/boroughs">
-            <Dot />
-            Borough Analytics
-          </NavItem>
-          <NavItem to="/declining">
-            <Dot />
-            Declining Restaurants
-          </NavItem>
-        </Nav>
+          <Nav>
+            <NavItem to="/" end>
+              <Dot />
+              Search
+            </NavItem>
+            <NavItem to="/danger-zone">
+              <Dot />
+              Danger Zone
+            </NavItem>
+            <NavItem to="/repeat-offenders">
+              <Dot />
+              Repeat Offenders
+            </NavItem>
+            <NavItem to="/boroughs">
+              <Dot />
+              Borough Analytics
+            </NavItem>
+            <NavItem to="/declining">
+              <Dot />
+              Declining Restaurants
+            </NavItem>
+          </Nav>
+        </SidebarContent>
+        <SkylineImage src="/skyline.png" alt="NYC skyline" />
       </Sidebar>
 
       <Main>

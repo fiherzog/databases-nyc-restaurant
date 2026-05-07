@@ -53,7 +53,7 @@ export function DecliningRestaurantsPage() {
         </TitleRow>
         <PageKicker>
           Restaurants whose latest inspection score is worse than their historical average (only those with {minInspections}+ inspections).
-          Sorted by biggest deterioration.
+          Sorted by biggest deterioration in health inspection scores.
         </PageKicker>
       </PageHeader>
 
