@@ -192,7 +192,7 @@ export function RestaurantProfilePage() {
 
         <Panel>
           <PanelBody>
-            <h3 style={{ marginBottom: 10 }}>Google Maps (if matched)</h3>
+            <h3 style={{ marginBottom: 10 }}>Google Maps</h3>
             {gRating || gReviews || gPrice ? (
               <StatRow>
                 <Stat>
