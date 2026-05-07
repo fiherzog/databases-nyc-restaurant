@@ -48,7 +48,7 @@ function Taxi() {
 
 
 const Shell = styled.div`
-  min-height: 100%;
+  min-height: 100vh;
   display: grid;
   grid-template-columns: 280px 1fr;
 
@@ -148,10 +148,16 @@ const Dot = styled.span`
 const Main = styled.main`
   padding: ${({ theme }) => theme.space.xxl};
   animation: ${fadeUp} 220ms ease-out;
+  display: flex;
+  flex-direction: column;
 
   @media (max-width: 980px) {
     padding: ${({ theme }) => theme.space.xl};
   }
+`;
+
+const PageContent = styled.div`
+  flex: 1;
 `;
 
 export function AppLayout() {
@@ -195,7 +201,9 @@ export function AppLayout() {
       </Sidebar>
 
       <Main>
-        <Outlet />
+        <PageContent>
+          <Outlet />
+        </PageContent>
         <TaxiTrack>
           <Taxi />
         </TaxiTrack>
