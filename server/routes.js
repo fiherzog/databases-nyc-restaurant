@@ -418,19 +418,54 @@ const getBoroughStats = async (req, res) => {
       return res.json(cached);
     }
 
-    const { restaurant, inspection } = TABLES;
+    const { restaurant, inspection, violation, gmap } = TABLES;
 
     const sql = `
+      with base_stats as (
+        select
+          r.boro as borough,
+          count(distinct r.camis)::int as restaurant_count,
+          avg(i.score)::float as avg_inspection_score,
+          avg(case when i.grade = 'A' then 1.0 else 0.0 end)::float as a_grade_rate
+        from ${restaurant} r
+        join ${inspection} i on r.camis = i.camis
+        where i.score is not null and r.boro is not null and r.boro <> ''
+        group by r.boro
+      ),
+      gmap_stats as (
+        select
+          r.boro as borough,
+          avg(g.avg_rating)::float as avg_google_rating,
+          avg(g.num_of_reviews)::float as avg_review_count,
+          count(distinct r.camis)::int as matched_restaurant_count
+        from ${restaurant} r
+        join ${gmap} g on r.gmap_business_id = g.gmap_business_id
+        where r.boro is not null and r.boro <> ''
+        group by r.boro
+      ),
+      critical_stats as (
+        select
+          r.boro as borough,
+          avg(case when v.critical_flag = 'Critical' then 1.0 else 0.0 end)::float as critical_violation_rate
+        from ${restaurant} r
+        join ${inspection} i on r.camis = i.camis
+        join ${violation} v on i.inspection_id = v.inspection_id
+        where r.boro is not null and r.boro <> ''
+        group by r.boro
+      )
       select
-        r.boro as borough,
-        count(distinct r.camis)::int as restaurant_count,
-        avg(i.score)::float as avg_inspection_score,
-        avg(case when i.grade = 'A' then 1.0 else 0.0 end)::float as a_grade_rate
-      from ${restaurant} r
-      join ${inspection} i on r.camis = i.camis
-      where i.score is not null and r.boro is not null and r.boro <> ''
-      group by r.boro
-      order by avg_inspection_score desc
+        bs.borough,
+        bs.restaurant_count,
+        bs.avg_inspection_score,
+        bs.a_grade_rate,
+        gs.avg_google_rating,
+        gs.avg_review_count,
+        gs.matched_restaurant_count,
+        cs.critical_violation_rate
+      from base_stats bs
+      left join gmap_stats gs on bs.borough = gs.borough
+      left join critical_stats cs on bs.borough = cs.borough
+      order by bs.avg_inspection_score desc
     `;
 
     console.time('getBoroughStats');

@@ -51,6 +51,10 @@ function pickBoroughRows(data) {
     restaurants: x.restaurant_count ?? x.restaurants ?? x.count ?? x.n_restaurants,
     avg_score: x.avg_inspection_score ?? x.avg_score ?? x.mean_score,
     a_rate: x.a_grade_rate ?? x.a_rate ?? x.pct_a ?? x.percent_a,
+    avg_google_rating: x.avg_google_rating ?? null,
+    avg_review_count: x.avg_review_count ?? null,
+    matched_restaurant_count: x.matched_restaurant_count ?? null,
+    critical_violation_rate: x.critical_violation_rate ?? null,
   })).filter((x) => x.borough && x.borough !== '0');
 }
 
@@ -95,6 +99,26 @@ export function BoroughDashboardPage() {
       borough: x.borough,
       avgScore: Number(x.avg_score ?? 0),
     }));
+  }, [boroStats]);
+
+  const googleChartData = useMemo(() => {
+    return [...boroStats]
+      .filter((x) => x.borough && x.avg_google_rating != null)
+      .sort((a, b) => Number(b.avg_google_rating) - Number(a.avg_google_rating))
+      .map((x) => ({
+        borough: x.borough,
+        avgGoogleRating: Number(x.avg_google_rating ?? 0),
+      }));
+  }, [boroStats]);
+
+  const criticalChartData = useMemo(() => {
+    return [...boroStats]
+      .filter((x) => x.borough && x.critical_violation_rate != null)
+      .sort((a, b) => Number(b.critical_violation_rate) - Number(a.critical_violation_rate))
+      .map((x) => ({
+        borough: x.borough,
+        criticalRate: Number((x.critical_violation_rate * 100).toFixed(2)),
+      }));
   }, [boroStats]);
 
   const top5ByBoro = useMemo(() => {
@@ -158,31 +182,87 @@ export function BoroughDashboardPage() {
               Avg score: {b.avg_score != null ? fmtNum(b.avg_score, 1) : '—'} · A-rate:{' '}
               {b.a_rate != null ? `${fmtNum(Number(b.a_rate) * (Number(b.a_rate) <= 1 ? 100 : 1), 1)}%` : '—'}
             </Mini>
+            <Mini>
+              Google rating: {b.avg_google_rating != null ? fmtNum(b.avg_google_rating, 2) : '—'} · Critical violations:{' '}
+              {b.critical_violation_rate != null ? `${fmtNum(b.critical_violation_rate * 100, 1)}%` : '—'}
+            </Mini>
           </StatCard>
         ))}
       </StatGrid>
 
       <TwoCol>
-        <Panel>
-          <PanelBody>
-            <h3 style={{ marginBottom: 10 }}>Avg inspection score by borough</h3>
-            <Mini style={{ marginBottom: 10 }}>Lower is better. Scores ≥ 28 are considered poor.</Mini>
-            <div style={{ width: '100%', height: 320 }}>
-              <ResponsiveContainer>
-                <BarChart data={chartData} margin={{ top: 10, right: 18, left: 0, bottom: 20 }}>
-                  <CartesianGrid stroke="rgba(0,0,0,0.10)" vertical={false} />
-                  <XAxis dataKey="borough" tick={{ fill: 'rgba(0,0,0,0.70)', fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={60} />
-                  <YAxis tick={{ fill: 'rgba(0,0,0,0.70)', fontSize: 11 }} />
-                  <Tooltip
-                    contentStyle={{ background: '#e85e0a', border: '1px solid rgba(0,0,0,0.25)', borderRadius: 10 }}
-                    labelStyle={{ color: 'rgba(0,0,0,0.8)' }}
-                  />
-                  <Bar dataKey="avgScore" fill="rgba(0,0,0,0.70)" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </PanelBody>
-        </Panel>
+        <div style={{ display: 'grid', gap: 16 }}>
+          <Panel>
+            <PanelBody style={{ paddingBottom: 20 }}>
+              <h3 style={{ marginBottom: 10 }}>Avg inspection score by borough</h3>
+              <Mini style={{ marginBottom: 10 }}>Lower is better. Scores ≥ 28 are considered poor.</Mini>
+              <div style={{ width: '100%', height: 320 }}>
+                <ResponsiveContainer>
+                  <BarChart data={chartData} margin={{ top: 10, right: 18, left: 0, bottom: 20 }}>
+                    <CartesianGrid stroke="rgba(0,0,0,0.10)" vertical={false} />
+                    <XAxis dataKey="borough" tick={{ fill: 'rgba(0,0,0,0.70)', fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={60} />
+                    <YAxis tick={{ fill: 'rgba(0,0,0,0.70)', fontSize: 11 }} />
+                    <Tooltip
+                      contentStyle={{ background: '#e85e0a', border: '1px solid rgba(0,0,0,0.25)', borderRadius: 10 }}
+                      labelStyle={{ color: 'rgba(0,0,0,0.8)' }}
+                    />
+                    <Bar dataKey="avgScore" fill="rgba(0,0,0,0.70)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </PanelBody>
+          </Panel>
+
+          <Panel>
+            <PanelBody style={{ paddingBottom: 20 }}>
+              <h3 style={{ marginBottom: 10 }}>Avg Google rating by borough</h3>
+              {googleChartData.length ? (
+                <div style={{ width: '100%', height: 320 }}>
+                  <ResponsiveContainer>
+                    <BarChart data={googleChartData} margin={{ top: 10, right: 18, left: 0, bottom: 20 }}>
+                      <CartesianGrid stroke="rgba(0,0,0,0.10)" vertical={false} />
+                      <XAxis dataKey="borough" tick={{ fill: 'rgba(0,0,0,0.70)', fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={60} />
+                      <YAxis domain={[0, 5]} tick={{ fill: 'rgba(0,0,0,0.70)', fontSize: 11 }} />
+                      <Tooltip
+                        contentStyle={{ background: '#e85e0a', border: '1px solid rgba(0,0,0,0.25)', borderRadius: 10 }}
+                        labelStyle={{ color: 'rgba(0,0,0,0.8)' }}
+                      />
+                      <Bar dataKey="avgGoogleRating" fill="rgba(0,0,0,0.70)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <EmptyState title="No Google Maps data" detail="No restaurants were matched to a Google Maps listing." />
+              )}
+            </PanelBody>
+          </Panel>
+
+          <Panel>
+            <PanelBody style={{ paddingBottom: 20 }}>
+              <h3 style={{ marginBottom: 10 }}>Critical violation rate by borough</h3>
+              <Mini style={{ marginBottom: 10 }}>Percentage of violations flagged as critical.</Mini>
+              {criticalChartData.length ? (
+                <div style={{ width: '100%', height: 320 }}>
+                  <ResponsiveContainer>
+                    <BarChart data={criticalChartData} margin={{ top: 10, right: 18, left: 0, bottom: 20 }}>
+                      <CartesianGrid stroke="rgba(0,0,0,0.10)" vertical={false} />
+                      <XAxis dataKey="borough" tick={{ fill: 'rgba(0,0,0,0.70)', fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={60} />
+                      <YAxis tickFormatter={(v) => `${v}%`} tick={{ fill: 'rgba(0,0,0,0.70)', fontSize: 11 }} />
+                      <Tooltip
+                        formatter={(v) => [`${v}%`, 'Critical rate']}
+                        contentStyle={{ background: '#e85e0a', border: '1px solid rgba(0,0,0,0.25)', borderRadius: 10 }}
+                        labelStyle={{ color: 'rgba(0,0,0,0.8)' }}
+                      />
+                      <Bar dataKey="criticalRate" fill="rgba(0,0,0,0.70)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <EmptyState title="No critical violation data" />
+              )}
+            </PanelBody>
+          </Panel>
+        </div>
 
         <Panel>
           <PanelBody>
